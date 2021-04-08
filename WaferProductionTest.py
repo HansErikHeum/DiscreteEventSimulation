@@ -418,7 +418,7 @@ class Schedule:
 
 class Simulator:
     # logic of batch introduction:
-    LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER = 0
+    LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER = 1
 
     def __init__(self, plant, schedule):
         self.plant = plant
@@ -550,7 +550,7 @@ class Optimizer:
         self.introduceNewBatchesLogics = [
             Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER]
         self.batchTypes = [20, 25, 40, 50]
-        self.quickestTime = None
+        self.quickestTime = 100000000
         self.bestSimulation = None
 
     def getSimulations(self):
@@ -566,6 +566,7 @@ class Optimizer:
         simulationNumber = 1
         quickestTime = 100000000000000
         bestSimulation = None
+
         for machineLogic in self.machineTaskChoosingLogics:
             for batchIntroduceLogic in self.introduceNewBatchesLogics:
                 for batchSize in self.batchTypes:
@@ -574,10 +575,14 @@ class Optimizer:
                                       "batchIntroduceLogic": batchIntroduceLogic, "batchSize": batchSize}
                     timeItTook = self.startSimulationAndReturnTimeItTook(
                         machineLogic, batchIntroduceLogic, batchSize)
+
                     simulationDict["timeToSimulate"] = timeItTook
-                    if timeItTook < self.quickestTime:
-                        self.quickestTime = timeItTook
-                        bestSimulation = simulationDict
+
+                    if timeItTook < quickestTime:
+                        print("time it tooooook", timeItTook)
+                        quickestTime = timeItTook
+                        bestSimulation = (
+                            "simulation: " + str(simulationNumber))
                     self.simulations["simulation: " +
                                      str(simulationNumber)] = simulationDict
                     simulationNumber += 1
@@ -670,8 +675,9 @@ class Printer:
         simulationsDict = optimizer.getSimulations()
         print("simulations dict  :", simulationsDict)
         self.pretty(simulationsDict, 0)
-        print("The best simulator was {0:s} with the time {1:d}".format(
-            optimizer.quick, optimizer))
+        print("slik ser optimizer uuuut", optimizer)
+        print("The best simulator was {0:s} with the time {1:f}".format(
+            optimizer.getBestSimulation(), optimizer.getQuickestTime()))
 
     def pretty(self, d, indent):
         for key, value in d.items():
@@ -685,8 +691,10 @@ class Printer:
 class HTMLPrinter:
     def __init__(self, plant):
         self.plant = plant
+        self.simulations = None
 
     def generateReport(self, optimizer, fileName):
+        self.simulations = optimizer.getSimulations()
         try:
             file = open(fileName, "w")
         except:
@@ -698,11 +706,52 @@ class HTMLPrinter:
 <title>Simulation and Optimization of Wafer Production</title>
 </head>
 <body>""")
+        file.write("<h1>Simulation and Optimization of Wafer Production</h1>\n")
+        for simulation in self.simulations:
+            self.printSimulation(simulation, file)
 
+            # HER MÅ DU LEGGE INN DEN SISTE TIDEN!!!!!
         file.write("""</body>
 </html>""")
         file.flush()
         file.close()
+
+    def printSimulation(self, simulation, file):
+        file.write("<h2>{0:s}</h2>\n".format(simulation))
+        file.write(
+            "<p>The parameters used in this simulations is described in the following table.</p>\n")
+        file.write('<table>\n')
+        stringMachineLogic = self.findStringRepresentationMachineLogic(
+            self.simulations[simulation]["machineLogic"])
+        stringBatchIntroduceLogic = self.findStringRepresentationBatchIntroduceLogic(
+            self.simulations[simulation]["batchIntroduceLogic"])
+        self.printTableRow("Machine task choosing logic",
+                           stringMachineLogic, file)
+        self.printTableRow("Batch introduction logic",
+                           stringBatchIntroduceLogic, file)
+        self.printTableRow("Batch size", str(
+            self.simulations[simulation]["batchSize"]), file)
+        self.printTableRow("Running time", str(
+            self.simulations[simulation]["timeToSimulate"]), file)
+        file.write('</table>\n')
+
+    def printTableRow(self, description, value, file):
+        file.write("<tr>\n")
+        file.write("  <td>{0:s}</td>\n".format(description))
+        file.write("  <td>{0:s}</td>\n".format(value))
+        file.write("</tr>\n")
+
+    def findStringRepresentationMachineLogic(self, value):
+        if value == 1:
+            return "Chronological task selection"
+        elif value == 2:
+            return "Reverse Chronological task selection"
+        elif value == 3:
+            return "Choose buffer with longest queue"
+
+    def findStringRepresentationBatchIntroduceLogic(self, value):
+        if value == 1:
+            return "Loaded when space in first buffer"
 
 
 if __name__ == "__main__":
@@ -780,3 +829,5 @@ if __name__ == "__main__":
     optimizer = Optimizer(testPlant, 1000)
     optimizer.startOptimization()
     printer.printAllSimulationsToTerminal(optimizer)
+    htmlPrinter = HTMLPrinter(testPlant)
+    htmlPrinter.generateReport(optimizer, 'report.html')
