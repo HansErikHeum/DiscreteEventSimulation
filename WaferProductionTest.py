@@ -68,12 +68,9 @@ class Buffer:
             return False
         else:
             return True
-# performed on a machine
-# given input and output buffers
-# a per batch load and unload times
-# per wafer processing time
 
-# Loading and unloading time is the time, therefore just loadingTime
+    def resetBuffer(self):
+        self.batchesInBuffer = []
 
 
 class Task:
@@ -111,12 +108,12 @@ class Machine:
 
     CHRONOLOGICAL_TASK_SELECTION = 1
     REVERSE_CHRONOLOGICAL_TASK_SELECTION = 2
+    CHOOSE_BUFFER_WITH_MOST_BATCHES = 3
 
     def __init__(self, name):
         self.name = name
         self.listOfTasks = []
         self.listOfBuffers = []
-        self.bufferQueue = []
         self.workingOnBatch = None
 # returns a batch
 
@@ -134,6 +131,8 @@ class Machine:
             nextBatch, task = self.chronologicalTaskSelection()
         elif logic == Machine.REVERSE_CHRONOLOGICAL_TASK_SELECTION:
             nextBatch, task = self.reverseChronologicalTaskSelection()
+        elif logic == Machine.CHOOSE_BUFFER_WITH_MOST_BATCHES:
+            nextBatch, task = self.chooseBufferWithMostBatches()
         return nextBatch, task
 
     def chronologicalTaskSelection(self):
@@ -158,6 +157,9 @@ class Machine:
                 break
         return batch, currentTask
 
+    def chooseBufferWithMostBatches(self):
+        pass
+
     def checkIfTaskCanBeDoneAndReturnBatch(self, task):
         # If it is no batches in the inputBuffer
         if task.getInputBuffer().isEmpty():
@@ -179,6 +181,9 @@ class Machine:
 
     def setWorkingOnBatch(self, batch):
         self.workingOnBatch = batch
+
+    def resetMachine(self):
+        self.workingOnBatch = None
 
 
 class Plant:
@@ -267,7 +272,10 @@ class Plant:
         machine.setWorkingOnBatch(None)
 
     def resetPlant(self):
-        pass
+        for machine in self.machines:
+            self.machines[machine].resetMachine()
+        for buffer in self.buffers:
+            self.buffers[buffer].resetBuffer()
 
 
 class Event:
