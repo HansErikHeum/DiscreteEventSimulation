@@ -60,6 +60,9 @@ class Buffer:
     def isEmpty(self):
         return len(self.batchesInBuffer) == 0
 
+    def getNumberOfBatchesInBuffer(self):
+        return len(self.batchesInBuffer)
+
     def hasSpaceForAnotherBatch(self, newBatch):
         currentTotalWafers = 0
         for batch in self.batchesInBuffer:
@@ -156,9 +159,30 @@ class Machine:
             if batch != None:
                 break
         return batch, currentTask
+    # makes a priority-list based on the buffers with the most batches in its queue
 
     def chooseBufferWithMostBatches(self):
-        pass
+        batch = None
+        currentTask = None
+        listOfTasksBuffersWithMostBatches = self.makePriorityListOfBuffers()
+        for task in listOfTasksBuffersWithMostBatches:
+            batch = self.checkIfTaskCanBeDoneAndReturnBatch(task)
+            currentTask = task
+            if batch != None:
+                break
+        return batch, currentTask
+
+    def makePriorityListOfBuffers(self):
+        priorityBufferQueue = []
+        for task in self.listOfTasks:
+            position = 0
+            while position < len(priorityBufferQueue):
+                otherTask = priorityBufferQueue[position]
+                if otherTask.getInputBuffer().getNumberOfBatchesInBuffer() > task.getInputBuffer().getNumberOfBatchesInBuffer():
+                    break
+                position += 1
+            priorityBufferQueue.insert(position, task)
+        return priorityBufferQueue
 
     def checkIfTaskCanBeDoneAndReturnBatch(self, task):
         # If it is no batches in the inputBuffer
@@ -503,13 +527,71 @@ class Simulator:
 
     def machinesLookForWork(self):
         for machine in self.plant.machines:
+            # if the machine is working on something
             if self.plant.machines[machine].getWorkingOnBatch() != None:
+                continue
+            # if the machine is the final inventory
+            if self.plant.machines[machine].getName() == "4":
                 continue
             batchToWorkOn, task = self.plant.machines[machine].selectNextBatch(
                 self.machineTaskChoosingLogic)
             if batchToWorkOn != None:
                 self.schedule.scheduleEventLoadMachineFromBuffer(
                     batchToWorkOn, task)
+
+
+class Optimizer:
+    def __init__(self, plant, numberOfWafersTotal):
+        self.plant = plant
+        self.numberOfWafersTotal = numberOfWafersTotal
+        self.simulations = {}
+        self.machineTaskChoosingLogics = [Machine.CHRONOLOGICAL_TASK_SELECTION,
+                                          Machine.REVERSE_CHRONOLOGICAL_TASK_SELECTION, Machine.CHOOSE_BUFFER_WITH_MOST_BATCHES]
+        self.introduceNewBatchesLogics = [
+            Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER]
+        self.batchTypes = [20, 25, 40, 50]
+        self.quickestTime = None
+        self.bestSimulation = None
+
+    def getSimulations(self):
+        return self.simulations
+
+    def getQuickestTime(self):
+        return self.quickestTime
+
+    def getBestSimulation(self):
+        return self.bestSimulation
+
+    def startOptimization(self):
+        simulationNumber = 1
+        quickestTime = 100000000000000
+        bestSimulation = None
+        for machineLogic in self.machineTaskChoosingLogics:
+            for batchIntroduceLogic in self.introduceNewBatchesLogics:
+                for batchSize in self.batchTypes:
+                    self.plant.resetPlant()
+                    simulationDict = {"machineLogic": machineLogic,
+                                      "batchIntroduceLogic": batchIntroduceLogic, "batchSize": batchSize}
+                    timeItTook = self.startSimulationAndReturnTimeItTook(
+                        machineLogic, batchIntroduceLogic, batchSize)
+                    simulationDict["timeToSimulate"] = timeItTook
+                    if timeItTook < self.quickestTime:
+                        self.quickestTime = timeItTook
+                        bestSimulation = simulationDict
+                    self.simulations["simulation: " +
+                                     str(simulationNumber)] = simulationDict
+                    simulationNumber += 1
+        self.quickestTime = quickestTime
+        self.bestSimulation = bestSimulation
+
+    def startSimulationAndReturnTimeItTook(self, machineLogic, batchIntroduceLogic, batchSize):
+        schedule = Schedule(self.plant)
+        simulator = Simulator(self.plant, schedule)
+        simulator.setMachineTaskChoosingLogic(machineLogic)
+        simulator.setIntroduceNewBatchesLogic(batchIntroduceLogic)
+        simulator.simulationLoop(self.numberOfWafersTotal, batchSize)
+        timeItTook = simulator.getExecution()[-1].getDate()
+        return timeItTook
 
 
 class Printer:
@@ -584,6 +666,44 @@ class Printer:
             outputFile.write("batch {0:d} is finished processed by machine {1:s}\n".format(
                 event.getBatch().getCode(), event.getTask().getMachine().getName()))
 
+    def printAllSimulationsToTerminal(self, optimizer):
+        simulationsDict = optimizer.getSimulations()
+        print("simulations dict  :", simulationsDict)
+        self.pretty(simulationsDict, 0)
+        print("The best simulator was {0:s} with the time {1:d}".format(
+            optimizer.quick, optimizer))
+
+    def pretty(self, d, indent):
+        for key, value in d.items():
+            print('\t' * indent + str(key))
+            if isinstance(value, dict):
+                self.pretty(value, indent+1)
+            else:
+                print('\t' * (indent+1) + str(value))
+
+
+class HTMLPrinter:
+    def __init__(self, plant):
+        self.plant = plant
+
+    def generateReport(self, optimizer, fileName):
+        try:
+            file = open(fileName, "w")
+        except:
+            print("Unable to open file {0:s}".format(fileName))
+            return
+        file.write("""<!DOCTYPE html>
+<html>
+<head>
+<title>Simulation and Optimization of Wafer Production</title>
+</head>
+<body>""")
+
+        file.write("""</body>
+</html>""")
+        file.flush()
+        file.close()
+
 
 if __name__ == "__main__":
     # __________________________Task 1 - Plant design______________________________
@@ -631,29 +751,32 @@ if __name__ == "__main__":
 
     testBatch20 = testPlant.newBatch(20, 1)
     testBatch30 = testPlant.newBatch(30, 2)
-    #testBatch40 = testPlant.newBatch(40, 3)
+    # testBatch40 = testPlant.newBatch(40, 3)
     testBatch50 = testPlant.newBatch(50, 4)
     event1 = schedule.scheduleEvent(
         Event.BATCH_ENTERS_FIRST_BUFFER, 2, testBatch20, testPlant.findFirstTask())
     event2 = schedule.scheduleEvent(
         Event.BATCH_ENTERS_FIRST_BUFFER, 4, testBatch30, testPlant.findFirstTask())
-    #event3 = schedule.scheduleEvent(Event.BATCH_ENTERS_FIRST_BUFFER, 5, testBatch40, testPlant.findFirstTask())
+    # event3 = schedule.scheduleEvent(Event.BATCH_ENTERS_FIRST_BUFFER, 5, testBatch40, testPlant.findFirstTask())
     event4 = schedule.scheduleEvent(
         Event.BATCH_ENTERS_FIRST_BUFFER, 8, testBatch50, testPlant.findFirstTask())
 
     simulator.simulationHardCodeStart()
-    printer.printExecution(simulator, sys.stdout)
+    # printer.printExecution(simulator, sys.stdout)
     # It is also possible to run the simulation by starting a loop, the first argument is number of total wafers, and second is batchSize
     testPlant.resetPlant()
     schedule2 = Schedule(testPlant)
     simulator2 = Simulator(testPlant, schedule2)
     simulator2.setMachineTaskChoosingLogic(
-        Machine.CHRONOLOGICAL_TASK_SELECTION)
+        Machine.CHOOSE_BUFFER_WITH_MOST_BATCHES)
     simulator2.setIntroduceNewBatchesLogic(
         Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER)
     simulator2.simulationLoop(200, 20)
 
-    printer.printExecution(simulator2, sys.stdout)
-    printer.printPlantState(sys.stdout)
+    # printer.printExecution(simulator2, sys.stdout)
+    # printer.printPlantState(sys.stdout)
 
     # _____________________________________Task 3 - Optimization design______________________-
+    optimizer = Optimizer(testPlant, 1000)
+    optimizer.startOptimization()
+    printer.printAllSimulationsToTerminal(optimizer)
