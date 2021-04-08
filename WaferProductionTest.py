@@ -266,6 +266,9 @@ class Plant:
     def batchFinishedOperatingOnMachine(self, machine):
         machine.setWorkingOnBatch(None)
 
+    def resetPlant(self):
+        pass
+
 
 class Event:
     BATCH_ENTERS_FIRST_BUFFER = 0
@@ -427,7 +430,8 @@ class Simulator:
     def simulationLoop(self, numberOfWafersTotal, batchSize):
         numberOfBatchesNeeded = self.findNumberOfBatchesNeeded(
             numberOfWafersTotal, batchSize)
-        batchNumber = 0
+        batchNumber = 1
+        print("number of batches needed :      ", numberOfBatchesNeeded)
         for i in range(numberOfBatchesNeeded):
             newBatch = self.plant.newBatch(batchSize, batchNumber)
             batchNumber += 1
@@ -470,6 +474,9 @@ class Simulator:
         self.plant.batchFinishedOperatingOnMachine(machine)
         self.plant.batchEntersBuffer(batch, toBuffer)
         self.machinesLookForWork()
+        # Now it's loading batches into the first buffer when batches move from machine 1 to buffer 2
+        if self.getIntroduceNewBatchesLogic() == Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER and toBuffer.getName() == '2':
+            self.schedule.scheduleEventBatchEntersFirstBuffer()
 
     def executeEventLoadMachineFromBuffer(self, event):
         batch = event.getBatch()
@@ -609,8 +616,6 @@ if __name__ == "__main__":
     schedule = Schedule(testPlant)
     simulator = Simulator(testPlant, schedule)
     simulator.setMachineTaskChoosingLogic(Machine.CHRONOLOGICAL_TASK_SELECTION)
-    simulator.setIntroduceNewBatchesLogic(
-        Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER)
 
     # To test the Task 2, we have to load batches "by hand" in the system and see how it evolves.
     # the method "SimulationHardStart()" is added to start the simulation when the events are hard-coded
@@ -631,7 +636,16 @@ if __name__ == "__main__":
     simulator.simulationHardCodeStart()
     printer.printExecution(simulator, sys.stdout)
     # It is also possible to run the simulation by starting a loop, the first argument is number of total wafers, and second is batchSize
-    #simulator.simulationLoop(1, 1)
+    testPlant.resetPlant()
+    schedule2 = Schedule(testPlant)
+    simulator2 = Simulator(testPlant, schedule2)
+    simulator2.setMachineTaskChoosingLogic(
+        Machine.CHRONOLOGICAL_TASK_SELECTION)
+    simulator2.setIntroduceNewBatchesLogic(
+        Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER)
+    simulator2.simulationLoop(200, 20)
 
-    #printer.printExecution(simulator, sys.stdout)
-    # printer.printPlantState(sys.stdout)
+    printer.printExecution(simulator2, sys.stdout)
+    printer.printPlantState(sys.stdout)
+
+    # _____________________________________Task 3 - Optimization design______________________-
