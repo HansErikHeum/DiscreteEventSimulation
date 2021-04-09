@@ -3,7 +3,8 @@ import sys
 import math
 
 
-# Wafers are fabricated by batches of 20 to 50 units
+""" @author: Herman Zahl & Hans Erik Heum"""
+
 
 class Batch:
     BEFORE_JOINING_BUFFER = 0
@@ -79,12 +80,10 @@ class Buffer:
 class Task:
     def __init__(self, name, machine, inputBuffer, outputBuffer, loadingTime, processingTime):
         self.name = name
-        # the machine object
         self.machine = machine
-        # buffer objects
         self.inputBuffer = inputBuffer
         self.outputBuffer = outputBuffer
-        # load and unload time, which is the same, and is always 2 secs (?)
+        # load and unload time, which is the same, and is always 2 secs
         self.loadTime = loadingTime
         self.processingTime = processingTime
 
@@ -189,8 +188,8 @@ class Machine:
         if task.getInputBuffer().isEmpty():
             return None
         tasksNextBatch = task.getInputBuffer().getNextBatchInQueue()
-        if tasksNextBatch.getState() != Batch.IN_BUFFER:
-            return None
+        """if tasksNextBatch.getState() != Batch.IN_BUFFER:
+            return None"""
         # has the outputbuffer capacity for another batch?
         if not task.getOutputBuffer().hasSpaceForAnotherBatch(tasksNextBatch):
             return None
@@ -290,7 +289,7 @@ class Plant:
     def loadMachineFromBuffer(self, batch, buffer, machine):
         # machine.setWorkingOnBatch(batch)
         batch.setState(Batch.IN_MACHINE)
-        # buffer.removeBatch(batch)
+        buffer.removeBatch(batch)
 
     def batchFinishedOperatingOnMachine(self, machine):
         machine.setWorkingOnBatch(None)
@@ -405,7 +404,7 @@ class Schedule:
 
 # must find out which machine it is going in to
     def scheduleEventLoadMachineFromBuffer(self, batch, task):
-        task.getInputBuffer().removeBatch(batch)
+        # task.getInputBuffer().removeBatch(batch)
         task.getMachine().setWorkingOnBatch(batch)
         date = self.currentDate + task.getLoadTime()
         return self.scheduleEvent(Event.LOAD_MACHINE_FROM_BUFFER, date, batch, task)
@@ -496,7 +495,6 @@ class Simulator:
         batch = event.getBatch()
         toBuffer = event.getTask().getInputBuffer()
         self.plant.batchEntersBuffer(batch, toBuffer)
-        # self.schedule.scheduleEventBatchEntersFirstBuffer()   - this should not happend here
         self.machinesLookForWork()
 
     def executeEventBatchEntersBuffer(self, event):
@@ -516,7 +514,7 @@ class Simulator:
         machine = event.task.getMachine()
         self.plant.loadMachineFromBuffer(batch, buffer, machine)
         self.schedule.scheduleEventMachineOperatesOnBach(batch, event.task)
-        # self.machinesLookForWork()
+        self.machinesLookForWork()
 
     def executeEventMachineOperatesOnBatch(self, event):
         batch = event.getBatch()
@@ -719,7 +717,8 @@ class HTMLPrinter:
         for simulation in self.simulations:
             self.printSimulation(simulation, file)
 
-            # HER MÅ DU LEGGE INN DEN SISTE TIDEN!!!!!
+        file.write("""<h2>The best simulator was {0:s} with the time {1:d} seconds</h2>""".format(
+            optimizer.getBestSimulation(), int(optimizer.getQuickestTime())))
         file.write("""</body>
 </html>""")
         file.flush()
