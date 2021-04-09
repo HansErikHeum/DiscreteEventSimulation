@@ -556,6 +556,15 @@ class Optimizer:
     def getSimulations(self):
         return self.simulations
 
+    def getMachineTaskChoosingLogics(self):
+        return self.machineTaskChoosingLogics
+
+    def getIntroduceNewBatchesLogic(self):
+        return self.introduceNewBatchesLogics
+
+    def getBatchTypes(self):
+        return self.batchTypes
+
     def getQuickestTime(self):
         return self.quickestTime
 
@@ -567,9 +576,9 @@ class Optimizer:
         quickestTime = 100000000000000
         bestSimulation = None
 
-        for machineLogic in self.machineTaskChoosingLogics:
-            for batchIntroduceLogic in self.introduceNewBatchesLogics:
-                for batchSize in self.batchTypes:
+        for batchSize in self.batchTypes:
+            for machineLogic in self.machineTaskChoosingLogics:
+                for batchIntroduceLogic in self.introduceNewBatchesLogics:
                     self.plant.resetPlant()
                     simulationDict = {"machineLogic": machineLogic,
                                       "batchIntroduceLogic": batchIntroduceLogic, "batchSize": batchSize}
