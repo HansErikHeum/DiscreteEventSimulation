@@ -1,4 +1,4 @@
-"""style type="text/css">
+"""<style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
   overflow:hidden;padding:10px 5px;word-break:normal;}
@@ -6,22 +6,22 @@
   font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
 .tg .tg-x9e7{background-color:#c0c0c0;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:15px;
   text-align:left;vertical-align:top}
-.tg .tg-v40l{background-color:#9b9b9b;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:15px;
-  text-align:center;vertical-align:top}
 .tg .tg-fhng{background-color:#c0c0c0;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;text-align:left;
   vertical-align:top}
 .tg .tg-xezz{background-color:#C0C0C0;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:15px;
   text-align:left;vertical-align:top}
 .tg .tg-bfjk{background-color:#c0c0c0;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:14px;
   text-align:left;vertical-align:top}
-.tg .tg-hnok{background-color:#ffffff;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:24px;
+.tg .tg-6pe1{background-color:#dae8fc;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:24px;
   text-align:center;vertical-align:top}
-.tg .tg-yj95{background-color:#9b9b9b;border-color:#000000;color:#000000;font-family:"Times New Roman", Times, serif !important;;
+.tg .tg-5mvr{background-color:#656565;border-color:#000000;color:#000000;font-family:"Times New Roman", Times, serif !important;;
   font-size:15px;text-align:left;vertical-align:top}
 .tg .tg-gwr6{background-color:#c0c0c0;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:16px;
   text-align:left;vertical-align:top}
-.tg .tg-mxzs{background-color:#9b9b9b;border-color:#000000;color:#000000;font-family:"Times New Roman", Times, serif !important;;
+.tg .tg-u1me{background-color:#656565;border-color:#000000;color:#000000;font-family:"Times New Roman", Times, serif !important;;
   font-size:14px;text-align:left;vertical-align:top}
+.tg .tg-l6o9{background-color:#656565;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:15px;
+  text-align:center;vertical-align:top}
 .tg .tg-0j94{background-color:#ffffff;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;font-size:15px;
   text-align:left;vertical-align:top}
 .tg .tg-iazv{background-color:#ffffff;border-color:#000000;font-family:"Times New Roman", Times, serif !important;;text-align:left;
@@ -147,9 +147,9 @@ class AdditionalTableHTMLPrinter:
   </tr>
   <tr>
     <td class="tg-u1me" colspan="2">Batch introduction logic</td>
-    <td class="tg-xezz">1st Load</td>
-    <td class="tg-xezz">1st Load</td>
-    <td class="tg-xezz">1st Load</td>
+    <td class="tg-xezz" colspan="2">1st Load</td>
+    <td class="tg-xezz" colspan="2">1st Load</td>
+    <td class="tg-xezz" colspan="2">1st Load</td>
   </tr>""")
         simulationNumber = 1
         firstRow = True
@@ -164,7 +164,7 @@ class AdditionalTableHTMLPrinter:
     <td class="tg-bfjk">{0:d}</td>""".format(batchSize))
             for i in optimizer.getMachineTaskChoosingLogics():
                 for j in optimizer.getIntroduceNewBatchesLogic():
-                    file.write("""<td class="tg-0j94">{0:d}</td> """.format(int(
+                    file.write("""<td class="tg-iazv" colspan="2">{0:d}</td> """.format(int(
                         optimizer.getSimulations()["simulation: "+str(simulationNumber)]["timeToSimulate"])))
                     simulationNumber += 1
             file.write("""</tr> """)
