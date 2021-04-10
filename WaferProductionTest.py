@@ -212,8 +212,6 @@ class Machine:
 class Plant:
     def __init__(self, name):
         self.name = name
-        # the buffer dict will look like {'1' : buffer-object}
-        # where '1' represents task ones inputBuffer
         self.buffers = dict()
         self.tasks = dict()
         self.machines = dict()
@@ -225,21 +223,11 @@ class Plant:
     def getTasks(self):
         return self.tasks.values()
 
-    def LookForTask(self, name):
-        return self.tasks.get(name, None)
-
     def getMachines(self):
         return self.machines
 
     def getBatches(self):
         return self.batches
-
-    def LookForMachine(self, name):
-        return self.machines.get(name, None)
-
-    def LookForBuffer(self, name):
-        return self.buffers.get(name, None)
-# where should the batch be stored?
 
     def newBatch(self, numberOfWafers, code):
         newBatch = Batch(numberOfWafers, code)
@@ -257,7 +245,6 @@ class Plant:
 
     def deleteBuffer(self, nameOfBuffersTask):
         del self.buffers[nameOfBuffersTask]
-    # need to check if the machine and buffers have been made first....
 
     def newTask(self, name, machine, inputBuffer, outputBuffer, loadingTime, processingTime):
         newTask = Task(name, machine, inputBuffer, outputBuffer,
@@ -287,7 +274,7 @@ class Plant:
         buffer.addBatch(batch)
 
     def loadMachineFromBuffer(self, batch, buffer, machine):
-        # machine.setWorkingOnBatch(batch)
+        machine.setWorkingOnBatch(batch)
         batch.setState(Batch.IN_MACHINE)
         buffer.removeBatch(batch)
 
@@ -304,7 +291,7 @@ class Plant:
 class Event:
     BATCH_ENTERS_FIRST_BUFFER = 0
     BATCH_ENTERS_BUFFER = 1
-    MACHINE_OPERATES_ON_BATCH = 2
+    MACHINE_FINISHED_OPERATING_ON_BATCH = 2
     LOAD_MACHINE_FROM_BUFFER = 3
     FINISHED = 4
 
@@ -312,7 +299,6 @@ class Event:
         self.type = type
         self.number = number
         self.date = date
-        self.buffer = None
         self.batch = None
         self.machine = None
         self.task = None
@@ -325,13 +311,6 @@ class Event:
 
     def getDate(self):
         return self.date
-
-    def setBuffer(self, buffer):
-
-        self.buffer = buffer
-
-    def getBuffer(self):
-        return self.buffer
 
     def setBatch(self, batch):
         self.batch = batch
@@ -350,7 +329,6 @@ class Event:
 
     def getTask(self):
         return self.task
-# list of events , ordered by increasing dates
 
 
 class Schedule:
@@ -392,8 +370,6 @@ class Schedule:
         if len(self.batches) == 0:
             return
         batch = self.batches.pop(0)
-        # ________________________________________________________________
-        # the logic behind finding newBuffer etc, should use the task class?
         firstTask = self.plant.findFirstTask()
         date = self.currentDate + firstTask.getLoadTime()
         return self.scheduleEvent(Event.BATCH_ENTERS_FIRST_BUFFER, date, batch, firstTask)
@@ -409,10 +385,10 @@ class Schedule:
         date = self.currentDate + task.getLoadTime()
         return self.scheduleEvent(Event.LOAD_MACHINE_FROM_BUFFER, date, batch, task)
 
-    def scheduleEventMachineOperatesOnBach(self, batch, task):
+    def scheduleEventMachineFinishedOperatingOnBatch(self, batch, task):
         date = self.currentDate + \
             (task.getProcessingTime()*batch.getNumberOfWafers())
-        return self.scheduleEvent(Event.MACHINE_OPERATES_ON_BATCH, date, batch, task)
+        return self.scheduleEvent(Event.MACHINE_FINISHED_OPERATING_ON_BATCH, date, batch, task)
 
 
 class Simulator:
@@ -444,13 +420,6 @@ class Simulator:
     def getSchedule(self):
         return self.schedule
 
-    def loadFirstTestBatch(self):
-        firstBatch = self.plant.newBatch(40, "a1b2c3")
-        self.schedule.batches.append(firstBatch)
-        self.schedule.scheduleEventBatchEntersFirstBuffer()
-
-    # must this function find correct answer
-    # Guess so
     def findNumberOfBatchesNeeded(self, numberOfWafersTotal, batchSize):
         if (numberOfWafersTotal % batchSize) != 0:
             raise Exception("The numberOfWafers : ", numberOfWafersTotal,
@@ -462,7 +431,6 @@ class Simulator:
         numberOfBatchesNeeded = self.findNumberOfBatchesNeeded(
             numberOfWafersTotal, batchSize)
         batchNumber = 1
-        print("number of batches needed :      ", numberOfBatchesNeeded)
         for i in range(numberOfBatchesNeeded):
             newBatch = self.plant.newBatch(batchSize, batchNumber)
             batchNumber += 1
@@ -488,8 +456,8 @@ class Simulator:
             self.executeEventBatchEntersBuffer(event)
         elif event.getType() == Event.LOAD_MACHINE_FROM_BUFFER:
             self.executeEventLoadMachineFromBuffer(event)
-        elif event.getType() == Event.MACHINE_OPERATES_ON_BATCH:
-            self.executeEventMachineOperatesOnBatch(event)
+        elif event.getType() == Event.MACHINE_FINISHED_OPERATING_ON_BATCH:
+            self.executeEventMachineFinishedOperatingOnBatch(event)
 
     def executeEventBatchEntersFirstBuffer(self, event):
         batch = event.getBatch()
@@ -513,10 +481,11 @@ class Simulator:
         buffer = event.task.getInputBuffer()
         machine = event.task.getMachine()
         self.plant.loadMachineFromBuffer(batch, buffer, machine)
-        self.schedule.scheduleEventMachineOperatesOnBach(batch, event.task)
+        self.schedule.scheduleEventMachineFinishedOperatingOnBatch(
+            batch, event.task)
         self.machinesLookForWork()
 
-    def executeEventMachineOperatesOnBatch(self, event):
+    def executeEventMachineFinishedOperatingOnBatch(self, event):
         batch = event.getBatch()
         machine = event.getMachine()
         task = event.getTask()
@@ -586,7 +555,6 @@ class Optimizer:
                     simulationDict["timeToSimulate"] = timeItTook
 
                     if timeItTook < quickestTime:
-                        print("time it tooooook", timeItTook)
                         quickestTime = timeItTook
                         bestSimulation = (
                             "simulation: " + str(simulationNumber))
@@ -611,6 +579,13 @@ class Printer:
         self.plant = plant
 
     def printPlantState(self, outputFile):
+        try:
+            outputFile = open(outputFile, "w")
+        except:
+            sys.stderr.write("Unable to open file {0:s}\n".format(outputFile))
+            sys.stderr.flush()
+            return
+
         outputFile.write(
             "The current state of {0:s} \n".format(self.plant.getName()))
         machines = self.plant.getMachines()
@@ -674,7 +649,7 @@ class Printer:
         elif event.getType() == Event.LOAD_MACHINE_FROM_BUFFER:
             outputFile.write("batch {0:d} loads to machine {1:s} from buffer {2:s}\n".format(
                 event.getBatch().getCode(), event.getTask().getMachine().getName(), event.getTask().getInputBuffer().getName()))
-        elif event.getType() == Event.MACHINE_OPERATES_ON_BATCH:
+        elif event.getType() == Event.MACHINE_FINISHED_OPERATING_ON_BATCH:
             outputFile.write("batch {0:d} is finished processed by machine {1:s}\n".format(
                 event.getBatch().getCode(), event.getTask().getMachine().getName()))
 
@@ -794,7 +769,7 @@ if __name__ == "__main__":
     task9 = testPlant.newTask("9", machine1, buffer9, finalBuffer, 2, 0.3)
     printer = Printer(testPlant)
     print("How the plant looks like without any batches in it:   \n")
-    printer.printPlantState(sys.stdout)
+    printer.printPlantState("howThePlantLooks.txt")
 
     # ____________________________________Task 2  - Simulator design_______________________
 

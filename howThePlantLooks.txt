@@ -1,0 +1,20 @@
+The current state of testPlant 
+machine 1
+	 Queue of batches in buffer 1 :
+	 Queue of batches in buffer 3 :
+	 Queue of batches in buffer 6 :
+	 Queue of batches in buffer 9 :
+	 Is currently working on batch:
+machine 2
+	 Queue of batches in buffer 2 :
+	 Queue of batches in buffer 5 :
+	 Queue of batches in buffer 7 :
+	 Is currently working on batch:
+machine 3
+	 Queue of batches in buffer 4 :
+	 Queue of batches in buffer 8 :
+	 Is currently working on batch:
+machine 4
+	 Queue of batches in buffer finished inventory :
+	 Is currently working on batch:
+State of batches: 
