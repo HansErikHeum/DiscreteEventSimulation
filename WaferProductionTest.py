@@ -3,7 +3,7 @@ import sys
 import math
 
 
-""" @author: Herman Zahl & Hans Erik Heum"""
+""" @authors: Herman Zahl & Hans Erik Heum"""
 
 
 class Batch:
@@ -117,7 +117,6 @@ class Machine:
         self.listOfTasks = []
         self.listOfBuffers = []
         self.workingOnBatch = None
-# returns a batch
 
     def getName(self):
         return self.name
@@ -158,6 +157,7 @@ class Machine:
             if batch != None:
                 break
         return batch, currentTask
+
     # makes a priority-list based on the buffers with the most batches in its queue
 
     def chooseBufferWithMostBatches(self):
@@ -188,8 +188,8 @@ class Machine:
         if task.getInputBuffer().isEmpty():
             return None
         tasksNextBatch = task.getInputBuffer().getNextBatchInQueue()
-        """if tasksNextBatch.getState() != Batch.IN_BUFFER:
-            return None"""
+        if tasksNextBatch.getState() != Batch.IN_BUFFER:
+            return None
         # has the outputbuffer capacity for another batch?
         if not task.getOutputBuffer().hasSpaceForAnotherBatch(tasksNextBatch):
             return None
@@ -269,6 +269,7 @@ class Plant:
 
     def batchEntersBuffer(self, batch, buffer):
         batch.setState(Batch.IN_BUFFER)
+        # if the batch enters the last buffer
         if buffer.getName() == "finished inventory":
             batch.setState(Batch.FINISHED_IN_INVENTORY)
         buffer.addBatch(batch)
@@ -378,9 +379,7 @@ class Schedule:
         date = self.currentDate + task.getLoadTime()
         return self.scheduleEvent(Event.BATCH_ENTERS_BUFFER, date, batch, task)
 
-# must find out which machine it is going in to
     def scheduleEventLoadMachineFromBuffer(self, batch, task):
-        # task.getInputBuffer().removeBatch(batch)
         task.getMachine().setWorkingOnBatch(batch)
         date = self.currentDate + task.getLoadTime()
         return self.scheduleEvent(Event.LOAD_MACHINE_FROM_BUFFER, date, batch, task)
@@ -401,6 +400,13 @@ class Simulator:
         self.execution = []
         self.machineTaskChoosingLogic = None
         self.introduceNewBatchesLogic = None
+        self.batchesMade = None
+
+    def getSchedule(self):
+        return self.schedule
+
+    def getExecution(self):
+        return self.execution
 
     def getMachineTaskChoosingLogic(self):
         return self.machineTaskChoosingLogic
@@ -414,28 +420,23 @@ class Simulator:
     def setIntroduceNewBatchesLogic(self, logic):
         self.introduceNewBatchesLogic = logic
 
-    def getExecution(self):
-        return self.execution
+    def getBatchesMade(self):
+        return self.batchesMade
 
-    def getSchedule(self):
-        return self.schedule
-
-    def findNumberOfBatchesNeeded(self, numberOfWafersTotal, batchSize):
-        if (numberOfWafersTotal % batchSize) != 0:
-            raise Exception("The numberOfWafers : ", numberOfWafersTotal,
-                            "is not divisible by batchsize : ", batchSize)
-        else:
-            return int(numberOfWafersTotal/batchSize)
+    def setBatchesMade(self, batchesMade):
+        self.batchesMade = batchesMade
 
     def simulationLoop(self, numberOfWafersTotal, batchSize):
-        numberOfBatchesNeeded = self.findNumberOfBatchesNeeded(
-            numberOfWafersTotal, batchSize)
+        batchesMade = 0
         batchNumber = 1
-        for i in range(numberOfBatchesNeeded):
+        while batchesMade < numberOfWafersTotal:
             newBatch = self.plant.newBatch(batchSize, batchNumber)
             batchNumber += 1
+            batchesMade += batchSize
             self.schedule.batches.append(newBatch)
+        self.setBatchesMade(batchesMade)
         self.schedule.scheduleEventBatchEntersFirstBuffer()
+
         while not self.schedule.isScheduleEmpty():
             event = self.schedule.popFirstEvent()
             self.execution.append(event)
@@ -452,10 +453,13 @@ class Simulator:
         # ___________________________________________________
         if event.getType() == Event.BATCH_ENTERS_FIRST_BUFFER:
             self.executeEventBatchEntersFirstBuffer(event)
+
         elif event.getType() == Event.BATCH_ENTERS_BUFFER:
             self.executeEventBatchEntersBuffer(event)
+
         elif event.getType() == Event.LOAD_MACHINE_FROM_BUFFER:
             self.executeEventLoadMachineFromBuffer(event)
+
         elif event.getType() == Event.MACHINE_FINISHED_OPERATING_ON_BATCH:
             self.executeEventMachineFinishedOperatingOnBatch(event)
 
@@ -472,9 +476,6 @@ class Simulator:
         self.plant.batchFinishedOperatingOnMachine(machine)
         self.plant.batchEntersBuffer(batch, toBuffer)
         self.machinesLookForWork()
-        # Now it's loading batches into the first buffer when batches move from machine 1 to buffer 2
-        if self.getIntroduceNewBatchesLogic() == Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER and toBuffer.getName() == '2':
-            self.schedule.scheduleEventBatchEntersFirstBuffer()
 
     def executeEventLoadMachineFromBuffer(self, event):
         batch = event.getBatch()
@@ -484,6 +485,10 @@ class Simulator:
         self.schedule.scheduleEventMachineFinishedOperatingOnBatch(
             batch, event.task)
         self.machinesLookForWork()
+
+        # Adds another batch into the first buffer, when a batch is taken from it (when space is available)
+        if self.getIntroduceNewBatchesLogic() == Simulator.LOAD_BATCHES_WHEN_MORE_SPACE_IS_AVAILABLE_IN_FIRST_BUFFER and buffer.getName() == '1':
+            self.schedule.scheduleEventBatchEntersFirstBuffer()
 
     def executeEventMachineFinishedOperatingOnBatch(self, event):
         batch = event.getBatch()
@@ -549,9 +554,9 @@ class Optimizer:
                     self.plant.resetPlant()
                     simulationDict = {"machineLogic": machineLogic,
                                       "batchIntroduceLogic": batchIntroduceLogic, "batchSize": batchSize}
-                    timeItTook = self.startSimulationAndReturnTimeItTook(
+                    timeItTook, batchesMade = self.startSimulationAndReturnTimeItTookAndBatchesMade(
                         machineLogic, batchIntroduceLogic, batchSize)
-
+                    simulationDict["batchesMade"] = batchesMade
                     simulationDict["timeToSimulate"] = timeItTook
 
                     if timeItTook < quickestTime:
@@ -564,14 +569,16 @@ class Optimizer:
         self.quickestTime = quickestTime
         self.bestSimulation = bestSimulation
 
-    def startSimulationAndReturnTimeItTook(self, machineLogic, batchIntroduceLogic, batchSize):
+    def startSimulationAndReturnTimeItTookAndBatchesMade(self, machineLogic, batchIntroduceLogic, batchSize):
         schedule = Schedule(self.plant)
         simulator = Simulator(self.plant, schedule)
         simulator.setMachineTaskChoosingLogic(machineLogic)
         simulator.setIntroduceNewBatchesLogic(batchIntroduceLogic)
         simulator.simulationLoop(self.numberOfWafersTotal, batchSize)
+        # returns the time at the last event happening, aka the time the whole simulation took
         timeItTook = simulator.getExecution()[-1].getDate()
-        return timeItTook
+        batchesMade = simulator.getBatchesMade()
+        return timeItTook, batchesMade
 
 
 class Printer:
@@ -632,7 +639,14 @@ class Printer:
             self.printEvent(event, outputFile)
 
     def printExecution(self, simulator, outputFile):
-        outputFile.write("schedule:\n")
+        try:
+            outputFile = open(outputFile, "w")
+        except:
+            sys.stderr.write("Unable to open file {0:s}\n".format(outputFile))
+            sys.stderr.flush()
+            return
+
+        outputFile.write("The events in the simulation:\n")
         for event in simulator.getExecution():
             self.printEvent(event, outputFile)
 
@@ -657,7 +671,6 @@ class Printer:
         simulationsDict = optimizer.getSimulations()
         print("simulations dict  :", simulationsDict)
         self.pretty(simulationsDict, 0)
-        print("slik ser optimizer uuuut", optimizer)
         print("The best simulator was {0:s} with the time {1:f}".format(
             optimizer.getBestSimulation(), optimizer.getQuickestTime()))
 
@@ -694,6 +707,7 @@ class HTMLPrinter:
 
         file.write("""<h2>The best simulator was {0:s} with the time {1:d} seconds</h2>""".format(
             optimizer.getBestSimulation(), int(optimizer.getQuickestTime())))
+        self.printSimulation(optimizer.getBestSimulation(), file)
         file.write("""</body>
 </html>""")
         file.flush()
@@ -716,6 +730,8 @@ class HTMLPrinter:
             self.simulations[simulation]["batchSize"]), file)
         self.printTableRow("Running time", str(
             self.simulations[simulation]["timeToSimulate"]), file)
+        self.printTableRow("Batches Made", str(
+            self.simulations[simulation]["batchesMade"]), file)
         file.write('</table>\n')
 
     def printTableRow(self, description, value, file):
@@ -783,17 +799,16 @@ if __name__ == "__main__":
 
     testBatch20 = testPlant.newBatch(20, 1)
     testBatch30 = testPlant.newBatch(30, 2)
-    # testBatch40 = testPlant.newBatch(40, 3)
-    testBatch50 = testPlant.newBatch(50, 4)
+    testBatch50 = testPlant.newBatch(50, 3)
     event1 = schedule.scheduleEvent(
         Event.BATCH_ENTERS_FIRST_BUFFER, 2, testBatch20, testPlant.findFirstTask())
     event2 = schedule.scheduleEvent(
         Event.BATCH_ENTERS_FIRST_BUFFER, 4, testBatch30, testPlant.findFirstTask())
-    # event3 = schedule.scheduleEvent(Event.BATCH_ENTERS_FIRST_BUFFER, 5, testBatch40, testPlant.findFirstTask())
-    event4 = schedule.scheduleEvent(
+    event3 = schedule.scheduleEvent(
         Event.BATCH_ENTERS_FIRST_BUFFER, 8, testBatch50, testPlant.findFirstTask())
 
     simulator.simulationHardCodeStart()
+    printer.printExecution(simulator, "evolutionOfSystemHardCoded.txt")
     # printer.printExecution(simulator, sys.stdout)
     # It is also possible to run the simulation by starting a loop, the first argument is number of total wafers, and second is batchSize
     testPlant.resetPlant()

@@ -1,0 +1,85 @@
+The events in the simulation:
+event 1 at 2.000000: batch 1 enters the first buffer
+event 2 at 4.000000: batch 2 enters the first buffer
+event 4 at 4.000000: batch 1 loads to machine 1 from buffer 1
+event 3 at 8.000000: batch 3 enters the first buffer
+event 5 at 14.000000: batch 1 is finished processed by machine 1
+event 6 at 16.000000: batch 1 unloads from machine 1 to buffer 2
+event 7 at 18.000000: batch 2 loads to machine 1 from buffer 1
+event 8 at 18.000000: batch 1 loads to machine 2 from buffer 2
+event 9 at 33.000000: batch 2 is finished processed by machine 1
+event 11 at 35.000000: batch 2 unloads from machine 1 to buffer 2
+event 12 at 37.000000: batch 3 loads to machine 1 from buffer 1
+event 13 at 62.000000: batch 3 is finished processed by machine 1
+event 14 at 64.000000: batch 3 unloads from machine 1 to buffer 2
+event 10 at 88.000000: batch 1 is finished processed by machine 2
+event 15 at 90.000000: batch 1 unloads from machine 2 to buffer 3
+event 16 at 92.000000: batch 1 loads to machine 1 from buffer 3
+event 17 at 92.000000: batch 2 loads to machine 2 from buffer 2
+event 18 at 116.000000: batch 1 is finished processed by machine 1
+event 20 at 118.000000: batch 1 unloads from machine 1 to buffer 4
+event 21 at 120.000000: batch 1 loads to machine 3 from buffer 4
+event 22 at 180.000000: batch 1 is finished processed by machine 3
+event 23 at 182.000000: batch 1 unloads from machine 3 to buffer 5
+event 19 at 197.000000: batch 2 is finished processed by machine 2
+event 24 at 199.000000: batch 2 unloads from machine 2 to buffer 3
+event 25 at 201.000000: batch 2 loads to machine 1 from buffer 3
+event 26 at 201.000000: batch 3 loads to machine 2 from buffer 2
+event 27 at 237.000000: batch 2 is finished processed by machine 1
+event 29 at 239.000000: batch 2 unloads from machine 1 to buffer 4
+event 30 at 241.000000: batch 2 loads to machine 3 from buffer 4
+event 31 at 331.000000: batch 2 is finished processed by machine 3
+event 32 at 333.000000: batch 2 unloads from machine 3 to buffer 5
+event 28 at 376.000000: batch 3 is finished processed by machine 2
+event 33 at 378.000000: batch 3 unloads from machine 2 to buffer 3
+event 34 at 380.000000: batch 3 loads to machine 1 from buffer 3
+event 35 at 380.000000: batch 1 loads to machine 2 from buffer 5
+event 37 at 396.000000: batch 1 is finished processed by machine 2
+event 38 at 398.000000: batch 1 unloads from machine 2 to buffer 6
+event 39 at 400.000000: batch 2 loads to machine 2 from buffer 5
+event 40 at 424.000000: batch 2 is finished processed by machine 2
+event 41 at 426.000000: batch 2 unloads from machine 2 to buffer 6
+event 36 at 440.000000: batch 3 is finished processed by machine 1
+event 42 at 442.000000: batch 3 unloads from machine 1 to buffer 4
+event 43 at 444.000000: batch 1 loads to machine 1 from buffer 6
+event 44 at 444.000000: batch 3 loads to machine 3 from buffer 4
+event 45 at 454.000000: batch 1 is finished processed by machine 1
+event 47 at 456.000000: batch 1 unloads from machine 1 to buffer 7
+event 48 at 458.000000: batch 2 loads to machine 1 from buffer 6
+event 49 at 458.000000: batch 1 loads to machine 2 from buffer 7
+event 50 at 473.000000: batch 2 is finished processed by machine 1
+event 52 at 475.000000: batch 2 unloads from machine 1 to buffer 7
+event 51 at 478.000000: batch 1 is finished processed by machine 2
+event 53 at 480.000000: batch 1 unloads from machine 2 to buffer 8
+event 54 at 482.000000: batch 2 loads to machine 2 from buffer 7
+event 55 at 512.000000: batch 2 is finished processed by machine 2
+event 56 at 514.000000: batch 2 unloads from machine 2 to buffer 8
+event 46 at 594.000000: batch 3 is finished processed by machine 3
+event 57 at 596.000000: batch 3 unloads from machine 3 to buffer 5
+event 58 at 598.000000: batch 3 loads to machine 2 from buffer 5
+event 59 at 598.000000: batch 1 loads to machine 3 from buffer 8
+event 61 at 636.000000: batch 1 is finished processed by machine 3
+event 60 at 638.000000: batch 3 is finished processed by machine 2
+event 62 at 638.000000: batch 1 unloads from machine 3 to buffer 9
+event 63 at 640.000000: batch 3 unloads from machine 2 to buffer 6
+event 64 at 640.000000: batch 1 loads to machine 1 from buffer 9
+event 65 at 640.000000: batch 2 loads to machine 3 from buffer 8
+event 66 at 646.000000: batch 1 is finished processed by machine 1
+event 68 at 648.000000: batch 1 unloads from machine 1 to buffer finished inventory
+event 69 at 650.000000: batch 3 loads to machine 1 from buffer 6
+event 70 at 675.000000: batch 3 is finished processed by machine 1
+event 71 at 677.000000: batch 3 unloads from machine 1 to buffer 7
+event 72 at 679.000000: batch 3 loads to machine 2 from buffer 7
+event 67 at 697.000000: batch 2 is finished processed by machine 3
+event 74 at 699.000000: batch 2 unloads from machine 3 to buffer 9
+event 75 at 701.000000: batch 2 loads to machine 1 from buffer 9
+event 76 at 710.000000: batch 2 is finished processed by machine 1
+event 77 at 712.000000: batch 2 unloads from machine 1 to buffer finished inventory
+event 73 at 729.000000: batch 3 is finished processed by machine 2
+event 78 at 731.000000: batch 3 unloads from machine 2 to buffer 8
+event 79 at 733.000000: batch 3 loads to machine 3 from buffer 8
+event 80 at 828.000000: batch 3 is finished processed by machine 3
+event 81 at 830.000000: batch 3 unloads from machine 3 to buffer 9
+event 82 at 832.000000: batch 3 loads to machine 1 from buffer 9
+event 83 at 847.000000: batch 3 is finished processed by machine 1
+event 84 at 849.000000: batch 3 unloads from machine 1 to buffer finished inventory
